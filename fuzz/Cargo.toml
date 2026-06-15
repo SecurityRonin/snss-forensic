@@ -1,0 +1,37 @@
+[package]
+name = "snss-forensic-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+# Standalone workspace: the fuzz crate must not be pulled into the parent
+# (core) workspace, whose virtual root manifest is not a package.
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+# The fuzzed structures (SNSS container/record framing and the navigation-command
+# base::Pickle decoder) live in snss-core, imported as `snss`.
+[dependencies.snss-core]
+path = "../core"
+
+[[bin]]
+name = "records"
+path = "fuzz_targets/records.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "navigation"
+path = "fuzz_targets/navigation.rs"
+test = false
+doc = false
+bench = false
+
+[profile.release]
+debug = 1

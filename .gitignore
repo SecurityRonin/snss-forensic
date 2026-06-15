@@ -1,0 +1,23 @@
+/target/
+Cargo.lock
+
+# Generated coverage report (cargo-llvm-cov) — never committed.
+/lcov.info
+
+# cargo-fuzz build artifacts, corpora and crash reproducers (the targets and
+# Cargo.toml are tracked; generated data is not).
+/fuzz/target
+/fuzz/corpus
+/fuzz/artifacts
+/fuzz/coverage
+/fuzz/Cargo.lock
+
+# Real browser session fixtures contain personal, proprietary on-disk data —
+# never commit. Ignore EVERYTHING under the fixtures dir by default
+# (secure-by-default: any file dropped here is uncommittable, not just the
+# known names); only the tracked placeholder is exempt. Repopulate locally with
+# scripts/copy-fixtures.sh to run the real-bytes tests.
+core/tests/fixtures/*
+!core/tests/fixtures/.gitkeep
+
+.DS_Store

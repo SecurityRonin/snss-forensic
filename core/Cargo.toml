@@ -1,0 +1,19 @@
+[package]
+name         = "snss-core"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+license.workspace      = true
+authors.workspace      = true
+repository.workspace   = true
+description  = "Panic-free read-only decoder for Chromium/Brave/Edge SNSS session files — validates the SNSS header, splits the command stream into length-prefixed records, decodes navigation-command base::Pickle payloads, and replays them into per-window tab state"
+keywords     = ["forensics", "chrome", "chromium", "snss", "dfir"]
+categories   = ["parser-implementations"]
+exclude      = ["/fuzz", "/.github", "/docs"]
+
+[lib]
+name = "snss"
+path = "src/lib.rs"
+
+[lints]
+workspace = true

@@ -11,7 +11,7 @@
 [![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 [![Security advisories](https://img.shields.io/badge/security-cargo--deny-informational.svg)](deny.toml)
 
-**Chromium/Brave/Edge SNSS session-file forensics for Rust — a panic-free,
+**Chromium/Brave/Edge SNSS session-file forensics for Rust — a fuzzed, panic-free-by-construction,
 read-only decoder that validates the `SNSS` command stream, splits it into
 length-prefixed records, decodes navigation-command `base::Pickle` payloads, and
 replays them into the per-window tab state a browser restores on launch.**

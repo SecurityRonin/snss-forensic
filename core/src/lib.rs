@@ -482,30 +482,31 @@ pub fn replay(stream: &RecordStream, dialect: Dialect) -> Replayed {
         }
         // The remaining commands only carry meaning in the Session/Apps dialect;
         // the Tabs dialect reuses these ids for unrelated commands.
-        if dialect == Dialect::Session {
-            match rec.id {
-                CMD_SET_TAB_WINDOW => {
-                    if let Some((window, tab)) = pod_pair(&rec.payload) {
-                        tab_window.insert(tab, window);
-                    }
+        if dialect != Dialect::Session {
+            continue;
+        }
+        match rec.id {
+            CMD_SET_TAB_WINDOW => {
+                if let Some((window, tab)) = pod_pair(&rec.payload) {
+                    tab_window.insert(tab, window);
                 }
-                CMD_TAB_INDEX_IN_WINDOW => {
-                    if let Some((tab, idx)) = pod_pair(&rec.payload) {
-                        tab_order.insert(tab, idx);
-                    }
-                }
-                CMD_SET_PINNED_STATE => {
-                    if let Some((tab, pinned)) = pod_pinned(&rec.payload) {
-                        tab_pinned.insert(tab, pinned);
-                    }
-                }
-                CMD_LAST_ACTIVE_TIME => {
-                    if let Some((tab, time)) = pod_last_active(&rec.payload) {
-                        tab_time.insert(tab, time);
-                    }
-                }
-                _ => {}
             }
+            CMD_TAB_INDEX_IN_WINDOW => {
+                if let Some((tab, idx)) = pod_pair(&rec.payload) {
+                    tab_order.insert(tab, idx);
+                }
+            }
+            CMD_SET_PINNED_STATE => {
+                if let Some((tab, pinned)) = pod_pinned(&rec.payload) {
+                    tab_pinned.insert(tab, pinned);
+                }
+            }
+            CMD_LAST_ACTIVE_TIME => {
+                if let Some((tab, time)) = pod_last_active(&rec.payload) {
+                    tab_time.insert(tab, time);
+                }
+            }
+            _ => {}
         }
     }
 

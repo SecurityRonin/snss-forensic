@@ -506,7 +506,7 @@ pub fn replay(stream: &RecordStream, dialect: Dialect) -> Replayed {
                     tab_time.insert(tab, time);
                 }
             }
-            _ => {}
+            _ => {} // cov:unreachable: all SNSS record ids handled above; defensive catch-all
         }
     }
 

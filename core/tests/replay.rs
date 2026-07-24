@@ -102,6 +102,44 @@ fn synthetic_last_active_decodes_to_a_sane_time() {
 }
 
 #[test]
+fn tabs_dialect_skips_session_only_commands() {
+    // In the Tabs (recently-closed) dialect, nav = cmd 1 and selected = cmd 4; the
+    // ids Chromium uses for SetTabWindow/TabIndexInWindow/SetPinnedState/LastActive
+    // in the Session dialect carry unrelated meaning here and must be ignored. This
+    // pins the dialect guard so those commands never leak into the reconstructed
+    // tree (and covers the guard portably, without the real Tabs fixture).
+    let bytes = build::snss(&[
+        (1, build::nav(10, 0, "https://closed/0", "Closed0")),
+        (1, build::nav(10, 1, "https://closed/1", "Closed1")),
+        (0, build::pair(100, 10)), // SetTabWindow id in Session -> ignored in Tabs
+        (2, build::pair(10, 0)),   // TabIndexInWindow id -> ignored in Tabs
+        (12, build::pinned(10, true)), // SetPinnedState id -> ignored in Tabs
+        (21, build::last_active(10, T_2026)), // LastActiveTime id -> ignored in Tabs
+        (4, build::pair(10, 0)),   // selected-index in Tabs -> current = index 0
+    ]);
+    let stream = read_records(&bytes[..]).unwrap();
+    let r = replay(&stream, Dialect::Tabs);
+
+    let tabs: Vec<&Tab> = r.windows.iter().flat_map(|w| &w.tabs).collect();
+    assert_eq!(tabs.len(), 1, "one reconstructed closed tab");
+    assert_eq!(tabs[0].id, 10);
+    assert!(
+        !tabs[0].pinned,
+        "SetPinnedState is a Session-only command and is not honored in Tabs"
+    );
+    assert_eq!(tabs[0].history.len(), 2, "both navigations survive");
+    assert_eq!(
+        tabs[0].current, 0,
+        "selected-index (cmd 4) resolves to index 0"
+    );
+    // Session-only LastActiveTime must not populate window recency in Tabs.
+    assert!(
+        r.windows.iter().all(|w| w.last_active.is_none()),
+        "LastActiveTime is ignored in the Tabs dialect"
+    );
+}
+
+#[test]
 fn real_session_replay_matches_ground_truth() {
     let Some(stream) = open_fixture_or_skip("Session_real") else {
         return;

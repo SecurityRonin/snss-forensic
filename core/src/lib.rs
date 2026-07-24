@@ -69,7 +69,7 @@ pub enum SnssError {
     /// The header declared a container version this decoder does not support.
     UnsupportedVersion(i32),
     /// An I/O error reading the header (record-stream truncation is *not* an
-    /// error — it is reported as a [`WarningKind::TruncatedTail`]).
+    /// error — it is reported as a [`Warning::TruncatedTail`]).
     Io(std::io::Error),
 }
 

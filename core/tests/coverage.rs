@@ -218,6 +218,19 @@ fn replay_discards_pre_epoch_last_active_time() {
     assert!(replayed.windows.iter().all(|w| w.last_active.is_none()));
 }
 
+#[test]
+fn replay_ignores_unmodeled_session_command() {
+    // A Session-dialect record whose id is none of the modeled commands
+    // (nav 6, selected 7, SetTabWindow 0, TabIndexInWindow 2, SetPinnedState 12,
+    // LastActiveTime 21) falls through the catch-all `_ => {}` arm and is ignored
+    // without error or warning. Real Session streams carry many such command ids.
+    let bytes = build::snss(&[(99, vec![1, 2, 3, 4])]);
+    let stream = read_records(&bytes[..]).unwrap();
+    let replayed = replay(&stream, Dialect::Session);
+    assert!(replayed.windows.is_empty());
+    assert!(replayed.warnings.is_empty());
+}
+
 // --- SourceKind::label -------------------------------------------------------
 
 #[test]

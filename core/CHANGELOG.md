@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/SecurityRonin/snss-forensic/compare/snss-core-v0.1.0...snss-core-v0.1.1) - 2026-07-25
+
+### Fixed
+
+- *(ci)* cover Tabs-dialect skip guard with a portable synthetic test
+- *(ci)* annotate unreachable defensive match arm // cov:unreachable (nondeterministic coverage region)
+- *(ci)* eliminate nondeterministic closing-brace coverage region in replay
+- *(ci)* repair rustdoc link and cover unmodeled Session command arm
+
 ### Changed
 
 - Extracted `snss-core` into its own standalone SecurityRonin workspace repo

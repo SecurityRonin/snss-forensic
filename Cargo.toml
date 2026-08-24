@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["core"]
+members = ["core", "forensic"]
 
 # ---------------------------------------------------------------------------
 # Shared package fields (DRY): bump version / MSRV / license here once;
@@ -19,6 +19,8 @@ repository   = "https://github.com/SecurityRonin/snss-forensic"
 # ---------------------------------------------------------------------------
 [workspace.dependencies]
 snss = { version = "0.1", path = "core", package = "snss-core" }
+# The normalized report model — the -forensic analyzer emits findings through it.
+forensicnomicon = "1"
 
 # ---------------------------------------------------------------------------
 # Paranoid Gatekeeper: these crates parse untrusted, attacker-controllable

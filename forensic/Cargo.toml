@@ -1,0 +1,23 @@
+[package]
+name         = "snss-forensic"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description  = "Chromium/Brave SNSS session-restore tamper analyzer — graded findings (navigation records that failed to decode, window last-active timestamps outside the range the format could have written) over the snss-core reader. Re-exports the full reader surface."
+readme       = "README.md"
+keywords     = ["forensics", "chromium", "snss", "dfir", "browser"]
+categories   = ["parser-implementations"]
+
+[lib]
+name = "snss_forensic"
+path = "src/lib.rs"
+
+[dependencies]
+snss           = { workspace = true }
+forensicnomicon = { workspace = true }
+
+[lints]
+workspace = true

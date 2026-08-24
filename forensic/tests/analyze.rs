@@ -11,7 +11,9 @@
 //! authoritative check here.)
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use snss_forensic::{analyze, read_records, replay, Dialect, SnssAnomalyKind};
+use snss_forensic::{
+    analyze, analyze_store, read_records, replay, Dialect, SessionStore, SnssAnomalyKind,
+};
 
 // ─── minimal SNSS builder (mirrors snss-core/tests/common build::) ───────────
 
@@ -154,4 +156,62 @@ fn a_far_future_last_active_is_caught() {
             .any(|f| matches!(f.kind, SnssAnomalyKind::ImplausibleLastActive { .. })),
         "a far-future last-active time must trip the timeline check"
     );
+}
+
+// ─── a truncated tail is normal (live file), never graded ────────────────────
+
+#[test]
+fn a_truncated_tail_is_not_graded() {
+    // A dangling record-size marker with no body: replay reports TruncatedTail,
+    // which the analyzer deliberately does NOT grade (a live session file is
+    // routinely half-written at its tail).
+    let mut bytes = snss(&[(CMD_NAV, nav(1, 0, "https://example.com", "Example"))]);
+    bytes.extend_from_slice(&16u16.to_le_bytes()); // size says 16, no body follows
+    let findings = analyze(&replayed(&bytes));
+    assert!(
+        findings.is_empty(),
+        "a truncated tail must not be treated as an anomaly, got {:?}",
+        findings.iter().map(|f| f.kind.clone()).collect::<Vec<_>>()
+    );
+}
+
+// ─── store-level grading across sources ──────────────────────────────────────
+
+#[test]
+fn analyze_store_grades_warnings_and_windows() {
+    // A discovered Session file carrying both a corrupt nav (→ a store-level
+    // BadNavigation warning) and an implausibly early last-active time (→ a
+    // graded window). analyze_store must surface both.
+    let bytes = snss(&[
+        (CMD_NAV, nav(1, 0, "https://example.com", "Example")),
+        (CMD_NAV, vec![0x01]), // corrupt: cannot decode → BadNavigation
+        (
+            CMD_LAST_ACTIVE,
+            last_active(1, win_micros_for_unix(631_152_000)), // 1990 → implausible
+        ),
+    ]);
+    let dir = std::env::temp_dir().join("snss_forensic_analyze_store_cov");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).expect("create temp store dir");
+    std::fs::write(dir.join("Session_100"), &bytes).expect("write session file");
+    // An older, undecodable Session file becomes a store-level UnreadableSource
+    // warning — which the analyzer deliberately does not grade (it is not a
+    // content anomaly). This exercises the non-graded warning arm.
+    std::fs::write(dir.join("Session_50"), b"not an SNSS file").expect("write bad file");
+
+    let store = SessionStore::open_dir(&dir).expect("open session store");
+    let findings = analyze_store(&store);
+    assert!(
+        findings
+            .iter()
+            .any(|f| matches!(f.kind, SnssAnomalyKind::NavigationDecodeFailed { .. })),
+        "a store-level BadNavigation must be graded"
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| matches!(f.kind, SnssAnomalyKind::ImplausibleLastActive { .. })),
+        "an implausible window in a discovered source must be graded"
+    );
+    let _ = std::fs::remove_dir_all(&dir);
 }

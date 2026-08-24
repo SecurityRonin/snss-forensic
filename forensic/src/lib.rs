@@ -158,9 +158,9 @@ fn grade_window(w: &Window) -> Option<SnssAnomalyKind> {
     let t = w.last_active?;
     let secs = match t.duration_since(UNIX_EPOCH) {
         Ok(d) => d.as_secs() as i64,
-        // The reader returns `None` for pre-Unix-epoch stamps, so this arm is
-        // defensive; a negative value is unambiguously out of range.
-        Err(e) => -(e.duration().as_secs() as i64),
+        // The reader drops pre-1970 last-active stamps to `None` (snss-core
+        // replay), so a `Some(t)` here always satisfies t >= epoch; defensive.
+        Err(e) => -(e.duration().as_secs() as i64), // cov:unreachable: reader guarantees t >= UNIX_EPOCH
     };
     if (FLOOR_UNIX_SECS..=CEIL_UNIX_SECS).contains(&secs) {
         None
@@ -211,4 +211,38 @@ pub fn analyze_store(store: &SessionStore) -> Vec<SnssAnomaly> {
         }
     }
     out
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
+mod metadata_tests {
+    use super::*;
+
+    #[test]
+    fn every_anomaly_variant_exposes_metadata() {
+        let kinds = [
+            SnssAnomalyKind::NavigationDecodeFailed {
+                record: 7,
+                error: "PickleError::Truncated".to_owned(),
+            },
+            SnssAnomalyKind::ImplausibleLastActive {
+                window_id: 3,
+                unix_secs: 0,
+            },
+        ];
+        for kind in kinds {
+            // Direct accessors — both match arms of severity/category/code/note.
+            let _ = kind.severity();
+            let _ = kind.category();
+            assert!(!kind.code().is_empty());
+            assert!(!kind.note().is_empty());
+
+            // The `Observation` impl delegates; exercise each method through it.
+            let obs = SnssAnomaly::new(kind.clone());
+            assert!(Observation::severity(&obs).is_some());
+            assert_eq!(Observation::code(&obs), kind.code());
+            assert_eq!(Observation::note(&obs), kind.note());
+            let _ = Observation::category(&obs);
+        }
+    }
 }
